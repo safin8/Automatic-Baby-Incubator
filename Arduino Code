@@ -12,6 +12,7 @@ DHT dht(DHTPIN,DHTTYPE);
 #define OLED_RESET 4 
 Adafruit_SSD1306 display(OLED_RESET); 
 //#define DHTTYPE DHT11 
+
 //DHT dht(DHTPIN,DHTTYPE); 
 const int ok = A1; 
 const int UP = A2; 
