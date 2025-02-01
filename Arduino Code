@@ -1,0 +1,201 @@
+#include <Adafruit_Sensor.h> 
+#include <Adafruit_SSD1306.h> 
+#include <Adafruit_GFX.h> 
+#include <SPI.h> 
+#include <Wire.h>  
+#include <LiquidCrystal_I2C.h> 
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
+#include <DHT.h> 
+#define DHTPIN A0 
+#define DHTTYPE DHT11 
+DHT dht(DHTPIN,DHTTYPE); 
+#define OLED_RESET 4 
+Adafruit_SSD1306 display(OLED_RESET); 
+//#define DHTTYPE DHT11 
+//DHT dht(DHTPIN,DHTTYPE); 
+const int ok = A1; 
+const int UP = A2; 
+const int DOWN = A3; 
+const int bulb = 3; 
+const int vap = 6; 
+//const int rs = 12; 
+//const int en = 11; 
+//const int d4 = 5; 
+//const int d5 = 4; 
+//const int d6 = 3; 
+//const int d7 = 2; 
+int ack = 0; 
+int pos = 0; 
+int sec = 0; 
+int Min = 0; 
+int hrs = 0; 
+int T_threshold = 25; 
+int H_threshold = 35; 
+int SET = 0; 
+int Direction = 0; 
+boolean T_condition = true; 
+boolean H_condition = true; 
+//Servo motor; 
+void setup() 
+{ 
+display.begin(SSD1306_SWITCHCAPVCC, 0x3C); 
+display.clearDisplay(); 
+pinMode(ok, INPUT); 
+pinMode(UP, INPUT); 
+pinMode(DOWN, INPUT); 
+pinMode(bulb, OUTPUT); 
+pinMode(vap, OUTPUT); 
+digitalWrite(bulb,HIGH); 
+digitalWrite(vap,HIGH); 
+digitalWrite(ok, HIGH); 
+digitalWrite(UP, HIGH); 
+digitalWrite(DOWN, HIGH); 
+//motor.attach(7); 
+//motor.write(pos); 
+dht.begin(); 
+lcd.begin(); 
+Serial.begin(9600); 
+lcd.setCursor(5, 0); 
+lcd.print("Baby"); 
+lcd.setCursor(4, 1); 
+lcd.print("Incubator"); 
+delay(1500); 
+} 
+void loop() 
+{ 
+display.setTextSize(2); 
+display.setTextColor(WHITE);  
+display.setCursor(0,0); 
+display.println("Safin     
+"); 
+display.display(); 
+if (SET == 0) 
+{ 
+lcd.clear(); 
+lcd.setCursor(0, 0); 
+lcd.print("Set Temperature(lower limit):"); 
+lcd.setCursor(0, 1); 
+lcd.print(T_threshold); 
+lcd.print(" *C"); 
+while (T_condition) 
+{ 
+if (digitalRead(UP) == LOW) 
+{ 
+T_threshold = T_threshold + 1; 
+lcd.setCursor(0, 1); 
+lcd.print(T_threshold); 
+lcd.print(" *C"); 
+delay(200); 
+} 
+if (digitalRead(DOWN) == LOW) 
+{ 
+T_threshold = T_threshold - 1; 
+lcd.setCursor(0, 1); 
+lcd.print(T_threshold); 
+lcd.print(" *C"); 
+delay(200); 
+} 
+if (digitalRead(ok) == LOW) 
+{ 
+delay(200); 
+T_condition = false; 
+} 
+} 
+lcd.clear(); 
+lcd.setCursor(0, 0); 
+lcd.print("Set Humidity:"); 
+lcd.setCursor(0, 1); 
+lcd.print(H_threshold); 
+lcd.print("%"); 
+delay(100); 
+while (H_condition) 
+{ 
+if (digitalRead(UP) == LOW) 
+{ 
+H_threshold = H_threshold + 1; 
+lcd.setCursor(0, 1); 
+lcd.print(H_threshold); 
+lcd.print("%"); 
+delay(100); 
+} 
+if (digitalRead(DOWN) == LOW) 
+{ 
+H_threshold = H_threshold - 1; 
+lcd.setCursor(0, 1); 
+lcd.print(H_threshold); 
+lcd.print("%"); 
+delay(200); 
+} 
+if (digitalRead(ok) == LOW)
+{ 
+delay(100); 
+H_condition = false; 
+} 
+} 
+SET = 1; 
+} 
+ack = 0; 
+int chk = dht.read(DHTPIN); 
+switch (chk) 
+{ 
+case 0: 
+ack = 1; 
+break; 
+} 
+if (ack == 0) 
+{ 
+lcd.clear(); 
+lcd.setCursor(0, 0); 
+lcd.print("Temp:"); 
+//float h=dht.readHumidity(); 
+//float t=dht.readTemperature(); 
+lcd.print(dht.readTemperature()); 
+lcd.setCursor(0, 1); 
+lcd.print("Humidity:"); 
+lcd.print(dht.readHumidity()); 
+delay(500); 
+if (dht.readTemperature() >= T_threshold) 
+{ 
+delay(500); 
+if (dht.readTemperature() >= T_threshold) 
+{ 
+digitalWrite(bulb,HIGH); 
+} 
+} 
+if (dht.readHumidity() >= H_threshold) 
+{ 
+delay(500); 
+if (dht.readHumidity() >= H_threshold) 
+{ 
+digitalWrite(vap,LOW); 
+} 
+}  
+if (dht.readTemperature() < T_threshold)
+{ 
+delay(500); 
+if (dht.readTemperature() < T_threshold) 
+{ 
+digitalWrite(bulb,LOW); 
+} 
+} 
+if (dht.readHumidity() < H_threshold)  
+{ 
+delay(500); 
+if (dht.readHumidity() < H_threshold) 
+{ 
+digitalWrite(vap,HIGH); 
+} 
+} 
+} 
+if (ack == 1) 
+{ 
+lcd.clear(); 
+lcd.setCursor(0, 0); 
+lcd.print("No Sensor data."); 
+lcd.setCursor(0, 1); 
+lcd.print("System Halted."); 
+digitalWrite(bulb,HIGH); 
+digitalWrite(vap,HIGH); 
+} 
+delay(500); 
+} 
